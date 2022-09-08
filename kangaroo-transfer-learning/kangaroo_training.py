@@ -1,22 +1,24 @@
-import os
-import xml.etree
+import os, sys
+import xml
 from numpy import zeros, asarray
 
+sys.path.append('..')
 import mrcnn.utils
 import mrcnn.config
 import mrcnn.model
 
-class KangarooDataset(mrcnn.utils.Dataset):
 
+class KangarooDataset(mrcnn.utils.Dataset):
     def load_dataset(self, dataset_dir, is_train=True):
         # Adds information (image ID, image path, and annotation file path) about each image in a dictionary.
         self.add_class("dataset", 1, "kangaroo")
 
-        images_dir = dataset_dir + '/images/'
-        annotations_dir = dataset_dir + '/annots/'
+        images_dir = os.path.join(dataset_dir, 'images')
+        annotations_dir = os.path.join(dataset_dir, 'annots')
 
         for filename in os.listdir(images_dir):
-            image_id = filename[:-4]
+            pos = filename.rfind('.')
+            image_id = filename[:pos]
 
             if is_train and int(image_id) >= 150:
                 continue
@@ -24,8 +26,8 @@ class KangarooDataset(mrcnn.utils.Dataset):
             if not is_train and int(image_id) < 150:
                 continue
 
-            img_path = images_dir + filename
-            ann_path = annotations_dir + image_id + '.xml'
+            img_path = os.path.join(images_dir, filename)
+            ann_path = os.path.join(annotations_dir, image_id+'.xml')
 
             self.add_image('dataset', image_id=image_id, path=img_path, annotation=ann_path)
 
@@ -64,6 +66,7 @@ class KangarooDataset(mrcnn.utils.Dataset):
         height = int(root.find('.//size/height').text)
         return boxes, width, height
 
+
 class KangarooConfig(mrcnn.config.Config):
     NAME = "kangaroo_cfg"
 
@@ -73,6 +76,7 @@ class KangarooConfig(mrcnn.config.Config):
     NUM_CLASSES = 2
 
     STEPS_PER_EPOCH = 131
+
 
 # Train
 train_dataset = KangarooDataset()
@@ -92,9 +96,11 @@ model = mrcnn.model.MaskRCNN(mode='training',
                              model_dir='./', 
                              config=kangaroo_config)
 
-model.load_weights(filepath='mask_rcnn_coco.h5', 
+
+model.load_weights(filepath='../mask_rcnn_coco.h5',
                    by_name=True, 
                    exclude=["mrcnn_class_logits", "mrcnn_bbox_fc",  "mrcnn_bbox", "mrcnn_mask"])
+
 
 model.train(train_dataset=train_dataset, 
             val_dataset=validation_dataset, 
@@ -102,5 +108,7 @@ model.train(train_dataset=train_dataset,
             epochs=1, 
             layers='heads')
 
+
 model_path = 'Kangaro_mask_rcnn_trained.h5'
 model.keras_model.save_weights(model_path)
+print('Finished!')
