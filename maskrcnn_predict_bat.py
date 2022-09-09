@@ -70,7 +70,6 @@ for fn in imgfiles:
                                       class_ids=r['class_ids'],
                                       class_names=CLASS_NAMES,
                                       scores=r['scores'],
-                                      save_fig_path=opath,
-                                      auto_show=False)
+                                      save_fig_path=opath)
 
 print('Finished')
